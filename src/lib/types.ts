@@ -5,12 +5,10 @@ export type InvestType = 'Active' | 'Passive';
 export interface Position {
   id: string;
   symbol: string;
-  market: Market;
+  market: Market; // ← 用它推得幣別
   qty: number;
   avg_cost: number;
-  currency: Currency;
   type: InvestType;
-  current_price: number;
 }
 
 export interface EnrichedRow extends Position {

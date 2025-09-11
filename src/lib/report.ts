@@ -1,46 +1,11 @@
-import type { EnrichedRow, Position } from '@/lib/types';
+import type { Currency, EnrichedRow, Position } from '@/lib/types';
+import type { PriceMap } from '@/lib/use-prices';
 
 export const initialPositions: Position[] = [
-  {
-    id: 'row-voo',
-    symbol: 'VOO',
-    market: 'US',
-    qty: 130,
-    avg_cost: 546.6,
-    currency: 'USD',
-    type: 'Passive',
-    current_price: 599.68,
-  },
-  {
-    id: 'row-qqq',
-    symbol: 'QQQ',
-    market: 'US',
-    qty: 130,
-    avg_cost: 507.52,
-    currency: 'USD',
-    type: 'Passive',
-    current_price: 580.7,
-  },
-  {
-    id: 'row-2330',
-    symbol: '2330.TW',
-    market: 'TW',
-    qty: 20,
-    avg_cost: 1140,
-    currency: 'TWD',
-    type: 'Active',
-    current_price: 1255,
-  },
-  {
-    id: 'row-pltr',
-    symbol: 'PLTR',
-    market: 'US',
-    qty: 40,
-    avg_cost: 110.01,
-    currency: 'USD',
-    type: 'Active',
-    current_price: 166.74,
-  },
+  { id: 'row-voo', symbol: 'VOO', market: 'US', qty: 130, avg_cost: 546.6, type: 'Passive' },
+  { id: 'row-qqq', symbol: 'QQQ', market: 'US', qty: 130, avg_cost: 507.52, type: 'Passive' },
+  { id: 'row-2330', symbol: '2330.TW', market: 'TW', qty: 20, avg_cost: 1140, type: 'Active' },
+  { id: 'row-pltr', symbol: 'PLTR', market: 'US', qty: 40, avg_cost: 110.01, type: 'Active' },
 ];
 
 export function blankRow(): Position {
@@ -50,40 +15,44 @@ export function blankRow(): Position {
     market: 'US',
     qty: 0,
     avg_cost: 0,
-    currency: 'USD',
     type: 'Active',
-    current_price: 0,
   };
 }
 
 export function normalize(orig: Position, patch: Partial<Position>): Partial<Position> {
   const out: any = { ...patch };
-  ['qty', 'avg_cost', 'current_price'].forEach((k) => {
+  ['qty', 'avg_cost'].forEach((k) => {
     if (k in out) out[k] = Number(out[k]) || 0;
   });
   return out;
 }
 
-export function computeReport(rows: Position[], usdTwd: number, baseCcy: 'TWD' | 'USD') {
+// helpers
+export const currencyFromMarket = (m: 'US' | 'TW'): Currency => (m === 'US' ? 'USD' : 'TWD');
+const convert = (val: number, from: Currency, to: Currency, usdTwd: number) =>
+  from === to ? val : from === 'USD' && to === 'TWD' ? val * usdTwd : val / usdTwd;
+
+export function computeReport(
+  rows: Position[],
+  usdTwd: number,
+  baseCcy: Currency,
+  prices: PriceMap,
+) {
   const map: EnrichedRow[] = rows.map((r) => {
-    const px = r.current_price;
-    const pxBase =
-      r.currency === 'USD' && baseCcy === 'TWD'
-        ? px * usdTwd
-        : r.currency === 'TWD' && baseCcy === 'USD'
-          ? px / usdTwd
-          : px;
-    const costBase =
-      r.currency === 'USD' && baseCcy === 'TWD'
-        ? r.avg_cost * usdTwd
-        : r.currency === 'TWD' && baseCcy === 'USD'
-          ? r.avg_cost / usdTwd
-          : r.avg_cost;
+    const ccy = currencyFromMarket(r.market);
+    const quote = prices[r.symbol]?.price;
+    const pxRaw = typeof quote === 'number' ? quote : r.avg_cost; // 抓不到價就用成本暫代
+
+    const pxBase = convert(pxRaw, ccy, baseCcy, usdTwd);
+    const costBase = convert(r.avg_cost, ccy, baseCcy, usdTwd);
+
     const mv = pxBase * r.qty;
     const pnl = (pxBase - costBase) * r.qty;
     const ret = costBase > 0 ? (pxBase / costBase - 1) * 100 : 0;
+
     return { ...r, pxBase, costBase, mv, pnl, ret };
   });
+
   const totals = map.reduce(
     (acc, r) => {
       acc.value += r.mv;
@@ -93,6 +62,7 @@ export function computeReport(rows: Position[], usdTwd: number, baseCcy: 'TWD' |
     },
     { value: 0, cost: 0, pnl: 0 },
   );
+
   const retPct = totals.cost > 0 ? (totals.pnl / totals.cost) * 100 : 0;
   return { rows: map, totals: { ...totals, retPct } };
 }
