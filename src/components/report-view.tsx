@@ -4,19 +4,15 @@ import ClientOnly from '@/components/client-only';
 import StatCard from '@/components/stat-card';
 import SummaryTable from '@/components/summary-table';
 import type { EnrichedRow } from '@/lib/types';
-import { COLORS, formatCurrency } from '@/lib/utils';
-import {
-  Bar,
-  BarChart,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { formatCurrency } from '@/lib/utils';
+import dynamic from 'next/dynamic';
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
+// 動態載入以避免 Recharts 在 SSR 量到 0
+const AllocationPieCompact = dynamic(
+  () => import('@/components/charts/allocation-pie-compact').then((m) => m.AllocationPieCompact),
+  { ssr: false },
+);
 
 export default function ReportView({
   baseCcy,
@@ -67,17 +63,11 @@ export default function ReportView({
         <div className="rounded-2xl bg-white p-4 shadow">
           <h3 className="mb-2 font-semibold">Top Holdings by Market Value</h3>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={110} label>
-                  {pieData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Legend />
-                <Tooltip formatter={(v) => formatCurrency(Number(v), baseCcy)} />
-              </PieChart>
-            </ResponsiveContainer>
+            <AllocationPieCompact
+              data={pieData} // [{ name, value }]
+              height={260} // 可改 220~320
+              labelThreshold={0.06} // 想多顯示一點就改 0.04
+            />
           </div>
         </div>
       </ClientOnly>

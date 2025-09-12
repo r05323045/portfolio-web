@@ -16,17 +16,9 @@ import type { Position } from '@/lib/types';
 export default function PositionsEditor({
   rows,
   onChange,
-  usdTwd,
-  setUsdTwd,
-  baseCcy,
-  setBaseCcy,
 }: {
   rows: Position[];
   onChange: (r: Position[]) => void;
-  usdTwd: number;
-  setUsdTwd: (n: number) => void;
-  baseCcy: 'TWD' | 'USD';
-  setBaseCcy: (c: 'TWD' | 'USD') => void;
 }) {
   function update(index: number, patch: Partial<Position>) {
     onChange(rows.map((r, i) => (i === index ? { ...r, ...normalize(r, patch) } : r)));
@@ -42,26 +34,7 @@ export default function PositionsEditor({
     <div className="rounded-2xl bg-white p-4 shadow">
       <header className="mb-3 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Positions</h2>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-neutral-500">Base</span>
-          <Select value={baseCcy} onValueChange={(v) => setBaseCcy(v as any)}>
-            <SelectTrigger className="w-[100px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TWD">TWD</SelectItem>
-              <SelectItem value="USD">USD</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <span className="text-sm text-neutral-500">USD/TWD</span>
-          <Input
-            className="w-24"
-            value={usdTwd}
-            onChange={(e) => setUsdTwd(Number(e.target.value) || 0)}
-          />
-          <Button onClick={add}>Add</Button>
-        </div>
+        <Button onClick={add}>Add</Button>
       </header>
 
       <div className="overflow-auto">
