@@ -29,10 +29,29 @@ export default function PortfolioPage() {
     () =>
       enriched.rows
         .map((r) => ({ name: r.symbol, pnl: Math.round(r.pnl) }))
-        .sort((a, b) => a.pnl - b.pnl),
+        .sort((a, b) => b.pnl - a.pnl),
     [enriched],
   );
   const pieData = useMemo(() => topAlloc(enriched.rows), [enriched]);
+
+  const activeData = useMemo(
+    () => topAlloc(enriched.rows.filter((r) => r.type === 'Active')),
+    [enriched],
+  );
+
+  const investmentTypeData = useMemo(() => {
+    const investmentTypes = Array.from(new Set(enriched.rows.map((r) => r.type)));
+    return investmentTypes.reduce(
+      (acc, type) => {
+        const total = enriched.rows
+          .filter((r) => r.type === type)
+          .reduce((sum, r) => sum + r.mv, 0);
+        acc.push({ name: type, value: total });
+        return acc;
+      },
+      [] as { name: string; value: number }[],
+    );
+  }, [enriched]);
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -52,7 +71,14 @@ export default function PortfolioPage() {
         </section>
 
         <section className="flex flex-col gap-4 lg:col-span-7">
-          <ReportView baseCcy={baseCcy} enriched={enriched} barData={barData} pieData={pieData} />
+          <ReportView
+            baseCcy={baseCcy}
+            enriched={enriched}
+            barData={barData}
+            pieData={pieData}
+            activeData={activeData}
+            investmentTypeData={investmentTypeData}
+          />
           <ActionsBar />
         </section>
       </div>
