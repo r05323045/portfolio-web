@@ -72,11 +72,12 @@ export function AllocationPieCompact({
 
   if (!cleaned.length || total <= 0) {
     return (
-      <div
-        className="flex items-center justify-center rounded-2xl bg-white p-4 shadow"
-        style={{ height }}
-      >
-        <div className="text-sm text-neutral-500">No data</div>
+      <div className="rounded-2xl bg-white p-4 shadow" style={{ height }}>
+        {/* 標題 */}
+        <div className="mb-2 font-semibold">{title}</div>
+        <div className="flex h-full items-center justify-center text-lg text-neutral-500">
+          No data
+        </div>
       </div>
     );
   }

@@ -45,6 +45,18 @@ export default function IndividualPnLChart({
     return [Math.min(0, padMin), Math.max(0, padMax)];
   }, [data]);
 
+  if (!data?.length) {
+    return (
+      <div className="rounded-2xl bg-white p-4 shadow" style={{ height }}>
+        {/* 標題 */}
+        <div className="mb-2 font-semibold">{title}</div>
+        <div className="flex h-full items-center justify-center text-lg text-neutral-500">
+          No data
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col rounded-2xl bg-white p-4 shadow" style={{ height }}>
       {/* 標題固定高度，不參與拉伸 */}
